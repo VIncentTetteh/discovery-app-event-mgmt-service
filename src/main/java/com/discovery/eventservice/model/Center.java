@@ -30,7 +30,7 @@ public class Center extends BaseEntity {
     @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150, unique = true)
     private String name;
 
     private String description;

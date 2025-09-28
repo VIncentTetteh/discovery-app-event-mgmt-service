@@ -2,6 +2,7 @@ package com.discovery.eventservice.controller.v1;
 
 import com.discovery.eventservice.dto.request.CenterRequest;
 import com.discovery.eventservice.dto.response.CenterResponse;
+import com.discovery.eventservice.model.CustomUserPrincipal;
 import com.discovery.eventservice.service.CenterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,14 +48,16 @@ public class CenterController {
     @PreAuthorize("hasRole('ADMIN')")
     public CenterResponse createCenter(@RequestBody CenterRequest request,
                                        @AuthenticationPrincipal String ownerId) {
+//        log.info("Creating center for ownerId: {}", ownerId);
+
         return centerService.createCenter(request, UUID.fromString(ownerId));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+
     public void deleteCenter(@PathVariable UUID id,
                              @AuthenticationPrincipal String ownerId) throws AccessDeniedException {
-        centerService.deleteCenter(id, UUID.fromString(ownerId));
+        centerService.deleteCenter(id,UUID.fromString(ownerId));
     }
 
     @GetMapping("/owner")
