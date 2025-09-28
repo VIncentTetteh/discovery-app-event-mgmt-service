@@ -12,7 +12,7 @@ public interface EventService {
     EventResponse getEvent(UUID id);
     List<EventResponse> getEventsByCenter(UUID centerId);
     List<EventResponse> getAllPublicEvents();
-    void deleteEvent(UUID id, UUID ownerId) throws AccessDeniedException;
-    List<EventResponse> getAllEventsByOwnerID(UUID ownerId);
+    void deleteEvent(UUID id, UUID centerId) throws AccessDeniedException;
+//    List<EventResponse> getAllEventsByOwnerID(UUID ownerId);
 }
 

@@ -13,7 +13,6 @@ public interface EventRepository extends JpaRepository<Event, UUID>, JpaSpecific
     List<Event> findByCenterId(UUID centerId);
     List<Event> findByIsPrivateFalse();
     List<Event> findByTitleContainingIgnoreCase(String title);
-    List<Event> findByOwnerId(UUID ownerId);
 
 }
 

@@ -66,23 +66,15 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public void deleteEvent(UUID id, UUID ownerId) throws AccessDeniedException {
+    public void deleteEvent(UUID id, UUID centerId) throws AccessDeniedException {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + id));
 
-        if (!event.getCenter().getOwnerId().equals(ownerId)) {
+        if (!event.getCenter().getId().equals(centerId)) {
             throw new AccessDeniedException("You are not allowed to delete this event.");
         }
 
         eventRepository.delete(event);
-    }
-
-    @Override
-    public List<EventResponse> getAllEventsByOwnerID(UUID ownerId) {
-        return eventRepository.findByOwnerId(ownerId)
-                .stream()
-                .map(eventMapper::toResponse)
-                .toList();
     }
 
 

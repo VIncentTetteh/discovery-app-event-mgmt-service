@@ -1,5 +1,6 @@
 package com.discovery.eventservice.service.impl;
 
+import com.discovery.eventservice.dto.request.TicketPurchaseRequest;
 import com.discovery.eventservice.dto.response.TicketResponse;
 import com.discovery.eventservice.enums.PaymentStatus;
 import com.discovery.eventservice.enums.TicketStatus;
@@ -16,6 +17,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -35,13 +37,11 @@ public class TicketServiceImpl implements TicketService {
     public TicketResponse getTicket(UUID id) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + id));
-
         return enrichWithPresignedUrl(ticket);
     }
 
     @Override
     public TicketResponse validateTicket(String qrValue) {
-        // derive S3 key consistently
         String objectKey = "qrcodes/" + qrValue + ".png";
 
         Ticket ticket = ticketRepository.findByQrCodeKey(objectKey)
@@ -51,7 +51,6 @@ public class TicketServiceImpl implements TicketService {
             throw new IllegalStateException("Ticket has already been used");
         }
 
-        // Mark as used
         ticket.setStatus(TicketStatus.USED);
         Ticket updated = ticketRepository.save(ticket);
 
@@ -78,10 +77,7 @@ public class TicketServiceImpl implements TicketService {
             throw new IllegalStateException("Cannot issue ticket: payment not completed");
         }
 
-        // Generate unique QR value
         String qrValue = UUID.randomUUID().toString();
-
-        // Upload QR image to S3 (private)
         String objectKey = s3Service.uploadQrCode(qrValue);
 
         Ticket ticket = Ticket.builder()
@@ -89,11 +85,34 @@ public class TicketServiceImpl implements TicketService {
                 .userId(userId)
                 .qrCodeKey(objectKey)
                 .status(TicketStatus.VALID)
-                .payment(payment) // 🔗 link ticket to payment
+                .payment(payment)
                 .build();
 
         Ticket saved = ticketRepository.save(ticket);
         return enrichWithPresignedUrl(saved);
+    }
+
+    /**
+     * Batch issuance for multiple ticket types (used in multi-ticket purchase)
+     */
+    @Override
+    public List<TicketResponse> issueTickets(UUID userId, UUID paymentId, List<TicketPurchaseRequest> tickets) {
+        return tickets.stream()
+                .flatMap(t -> {
+                    return java.util.stream.IntStream.range(0, t.quantity())
+                            .mapToObj(i -> issueTicket(t.ticketTypeId(), userId, paymentId));
+                })
+                .toList();
+    }
+
+    /**
+     * Get ticket price from TicketType (used in total amount calculation)
+     */
+    @Override
+    public BigDecimal getTicketTypePrice(UUID ticketTypeId) {
+        TicketType ticketType = ticketTypeRepository.findById(ticketTypeId)
+                .orElseThrow(() -> new EntityNotFoundException("Ticket type not found with id: " + ticketTypeId));
+        return ticketType.getPrice();
     }
 
     /**

@@ -5,7 +5,7 @@ import com.discovery.eventservice.enums.TicketStatus;
 import java.util.UUID;
 public record TicketResponse(
         UUID id,
-        String qrCodeUrl, // presigned URL (computed, not stored)
+        String qrCodeKey, // presigned URL (computed, not stored)
         TicketStatus status,
         boolean isUsed,
         UUID ticketTypeId,

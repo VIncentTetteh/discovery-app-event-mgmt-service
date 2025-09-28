@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -17,7 +19,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Review {
+@SQLDelete(sql = "UPDATE centers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@Where(clause = "deleted_at IS NULL")
+public class Review extends BaseEntity {
 
     @Id
     @GeneratedValue(generator = "uuid7")
@@ -31,12 +35,12 @@ public class Review {
     private String comment;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId; // reviewer reference
+    private UUID userId; // reviewer reference
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    private LocalDateTime createdAt;
+//    private LocalDateTime createdAt;
 }
 

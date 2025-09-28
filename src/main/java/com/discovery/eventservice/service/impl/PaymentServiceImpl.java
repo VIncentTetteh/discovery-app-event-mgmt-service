@@ -1,6 +1,7 @@
 package com.discovery.eventservice.service.impl;
 
 import com.discovery.eventservice.dto.request.PaymentRequest;
+import com.discovery.eventservice.dto.request.TicketPurchaseRequest;
 import com.discovery.eventservice.dto.response.PaymentResponse;
 import com.discovery.eventservice.dto.response.PaystackInitResponse;
 import com.discovery.eventservice.dto.response.PaystackVerifyResponse;
@@ -19,19 +20,24 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
+import com.discovery.eventservice.model.PaymentTicket;
+import com.discovery.eventservice.repository.TicketTypeRepository;
+import java.util.ArrayList;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final TicketTypeRepository ticketTypeRepository;
     private final PaymentMapper paymentMapper;
     private final PaystackService paystackService;
     private final TicketService ticketService;
 
     @Override
     public PaymentResponse initiatePayment(PaymentRequest request) {
-        // Call Paystack (stub for now, real API later)
+        // Initialize Paystack transaction
         PaystackInitResponse initResponse = paystackService.initializeTransaction(
                 request.userId(),
                 request.amount(),
@@ -39,16 +45,30 @@ public class PaymentServiceImpl implements PaymentService {
                 request.callbackUrl()
         );
 
+        // Convert TicketPurchaseRequest to PaymentTicket entities
+        List<PaymentTicket> paymentTickets = new ArrayList<>();
+        for (TicketPurchaseRequest t : request.tickets()) {
+            PaymentTicket pt = PaymentTicket.builder()
+                    .ticketType(ticketTypeRepository.findById(t.ticketTypeId())
+                            .orElseThrow(() -> new EntityNotFoundException(
+                                    "Ticket type not found: " + t.ticketTypeId())))
+                    .quantity(t.quantity())
+                    .build();
+            paymentTickets.add(pt);
+        }
+
         Payment payment = Payment.builder()
                 .userId(request.userId())
                 .eventId(request.eventId())
-                .ticketTypeId(request.ticketTypeId())
-                .quantity(request.quantity())
                 .amount(request.amount())
                 .status(PaymentStatus.PENDING)
                 .reference(initResponse.reference())
                 .authorizationUrl(initResponse.authorizationUrl())
+                .tickets(paymentTickets) // associate multiple ticket types
                 .build();
+
+        // Link PaymentTickets to Payment
+        paymentTickets.forEach(pt -> pt.setPayment(payment));
 
         Payment saved = paymentRepository.save(payment);
         return paymentMapper.toResponse(saved);
@@ -61,15 +81,16 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findByReference(reference)
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found with reference: " + reference));
 
-        if (verifyResponse.status().equalsIgnoreCase("success")) {
+        if ("success".equalsIgnoreCase(verifyResponse.status())) {
             payment.setStatus(PaymentStatus.SUCCESS);
             paymentRepository.save(payment);
 
-            // Issue tickets for user
-            for (int i = 0; i < payment.getQuantity(); i++) {
-                ticketService.issueTicket(payment.getTicketTypeId(), payment.getUserId(), payment.getId());
+            // Issue tickets for all ticket types and quantities
+            for (PaymentTicket pt : payment.getTickets()) {
+                for (int i = 0; i < pt.getQuantity(); i++) {
+                    ticketService.issueTicket(pt.getTicketType().getId(), payment.getUserId(), payment.getId());
+                }
             }
-
         } else {
             payment.setStatus(PaymentStatus.FAILED);
             paymentRepository.save(payment);

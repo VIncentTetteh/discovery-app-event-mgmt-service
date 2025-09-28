@@ -3,3 +3,57 @@ spring:
     name: eventservice
 
 
+  # Postgres (JPA with HikariCP)
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/eventservicesdb}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+
+
+  jpa:
+    hibernate:
+      ddl-auto: validate   # always rely on Flyway, no auto schema changes
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  # Flyway (for schema migrations)
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://localhost:5432/eventservicesdb
+    user: postgres
+    password: postgres
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # Redis
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN
+    com.discovery.userservice: DEBUG
+
+
+jwt:
+  secret: ${JWT_SECRET:u8Yv1kKZP0mF3qR9wLd9s7vT1xB2hG6jM5nQ8rR4sZ1cE7yX3aV6nU4oF0jD9wT2}
+
+app:
+  aws:
+    bucket: ${AWS_S3_BUCKET:eventservice-bucket}
+
+server:
+  port: ${PORT:8081}

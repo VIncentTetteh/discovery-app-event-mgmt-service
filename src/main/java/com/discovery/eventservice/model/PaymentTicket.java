@@ -10,20 +10,17 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "ticket_types")
+@Table(name = "payment_tickets")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @SQLDelete(sql = "UPDATE centers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Where(clause = "deleted_at IS NULL")
-public class TicketType extends BaseEntity {
+public class PaymentTicket extends BaseEntity {
 
     @Id
     @GeneratedValue(generator = "uuid7")
@@ -31,15 +28,14 @@ public class TicketType extends BaseEntity {
     @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
     private UUID id;
 
-    private String name;       // e.g. VIP, Regular
-    private BigDecimal price;
-    private int quantity;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_id", nullable = false)
+    private Payment payment;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id", nullable = false)
-    private Event event;
+    @JoinColumn(name = "ticket_type_id", nullable = false)
+    private TicketType ticketType;
 
-    @OneToMany(mappedBy = "ticketType", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Ticket> tickets = new ArrayList<>();
+    private int quantity;
 }
 

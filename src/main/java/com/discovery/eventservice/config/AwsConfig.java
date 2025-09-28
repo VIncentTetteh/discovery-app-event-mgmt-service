@@ -10,8 +10,8 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 @Configuration
 public class AwsConfig {
 
-    @Value("${app.aws.region}")
-    private String region;
+//    @Value("${app.aws.region}")
+    private final String region = "eu-west-1";
 
     @Bean
     public S3Client s3Client() {

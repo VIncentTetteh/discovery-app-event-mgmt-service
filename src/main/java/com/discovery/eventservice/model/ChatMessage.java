@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -17,7 +19,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ChatMessage {
+@SQLDelete(sql = "UPDATE centers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@Where(clause = "deleted_at IS NULL")
+public class ChatMessage extends BaseEntity {
 
     @Id
     @GeneratedValue(generator = "uuid7")
@@ -26,7 +30,7 @@ public class ChatMessage {
     private UUID id;
 
     @Column(nullable = false)
-    private Long senderId; // from user-service
+    private UUID senderId; // from user-service
 
     @Column(nullable = false)
     private String content;

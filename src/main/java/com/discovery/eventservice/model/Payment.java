@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,7 +23,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Payment {
+@SQLDelete(sql = "UPDATE centers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@Where(clause = "deleted_at IS NULL")
+public class Payment extends BaseEntity {
 
     @Id
     @GeneratedValue(generator = "uuid7")
@@ -31,9 +35,6 @@ public class Payment {
 
     private UUID userId;
     private UUID eventId;
-
-    private UUID ticketTypeId; // to know which tickets to issue
-    private int quantity;
 
     private BigDecimal amount;
 
@@ -45,9 +46,9 @@ public class Payment {
 
     private String authorizationUrl; // Paystack checkout link
 
+    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PaymentTicket> tickets = new ArrayList<>();
 
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 }
-
