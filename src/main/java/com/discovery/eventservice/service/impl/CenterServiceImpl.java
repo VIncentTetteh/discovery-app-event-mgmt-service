@@ -3,6 +3,7 @@ package com.discovery.eventservice.service.impl;
 
 import com.discovery.eventservice.dto.request.CenterRequest;
 import com.discovery.eventservice.dto.response.CenterResponse;
+import com.discovery.eventservice.exception.CenterAlreadyExistsException;
 import com.discovery.eventservice.mapper.CenterMapper;
 import com.discovery.eventservice.model.Center;
 import com.discovery.eventservice.repository.CenterRepository;
@@ -10,7 +11,9 @@ import com.discovery.eventservice.service.CenterService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.AccessDeniedException;
 import java.util.List;
@@ -26,6 +29,12 @@ public class CenterServiceImpl implements CenterService {
 
     @Override
     public CenterResponse createCenter(CenterRequest request, UUID ownerId) {
+        // check if center with same name and location already exists
+        if (centerRepository.findAll().stream()
+                .anyMatch(c -> c.getName().equalsIgnoreCase(request.name()) &&
+                        c.getLocation().equalsIgnoreCase(request.location()))) {
+            throw new CenterAlreadyExistsException("Center with same name and location already exists.");
+        }
         Center center = centerMapper.toEntity(request);
         center.setOwnerId(ownerId);
         Center saved = centerRepository.save(center);
