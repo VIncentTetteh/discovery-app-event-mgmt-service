@@ -11,6 +11,9 @@ import com.discovery.eventservice.service.EventService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
@@ -25,6 +28,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final CenterRepository centerRepository;
     private final EventMapper eventMapper;
+    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Override
     public EventResponse createEvent(EventRequest request) {
@@ -75,6 +79,32 @@ public class EventServiceImpl implements EventService {
         }
 
         eventRepository.delete(event);
+    }
+
+
+
+
+    @Override
+    public List<EventResponse> findEventsNearbyCenters(double latitude, double longitude, double radiusMeters) {
+        Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+        point.setSRID(4326);
+
+        List<Event> events = eventRepository.findEventsByNearbyCenters(point, radiusMeters);
+
+        return events.stream()
+                .map(event -> new EventResponse(
+                        event.getId(),
+                        event.getTitle(),
+                        event.getDescription(),
+                        event.getStartTime(),
+                        event.getEndTime(),
+                        event.isPrivate(),
+                        event.getCenter().getId(),
+                        event.getCenter().getName(),
+                        event.getCenter().getLatitude(),
+                        event.getCenter().getLongitude()
+                ))
+                .toList();
     }
 
 

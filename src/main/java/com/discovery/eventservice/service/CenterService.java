@@ -16,5 +16,6 @@ public interface CenterService {
     void deleteCenter(UUID id, UUID ownerId) throws AccessDeniedException;
 
     List<CenterResponse> getAllCentersByOwnerID(UUID ownerId);
+    List<CenterResponse> findCentersNearby(double latitude, double longitude, double radiusMeters);
 }
 

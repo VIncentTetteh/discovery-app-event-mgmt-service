@@ -11,6 +11,9 @@ import com.discovery.eventservice.service.CenterService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,6 +29,7 @@ public class CenterServiceImpl implements CenterService {
 
     private final CenterRepository centerRepository;
     private final CenterMapper centerMapper;
+    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Override
     public CenterResponse createCenter(CenterRequest request, UUID ownerId) {
@@ -93,6 +97,27 @@ public class CenterServiceImpl implements CenterService {
         return centerRepository.findByOwnerId(ownerId)
                 .stream()
                 .map(centerMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<CenterResponse> findCentersNearby(double latitude, double longitude, double radiusMeters) {
+        Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+        point.setSRID(4326);
+
+        List<Center> centers = centerRepository.findNearbyCenters(point, radiusMeters);
+
+        return centers.stream()
+                .map(center -> new CenterResponse(
+                        center.getId(),
+                        center.getName(),
+                        center.getDescription(),
+                        center.getLocation(),
+                        center.getCategory(),
+                        center.getOwnerId(),
+                        center.getLatitude(),
+                        center.getLongitude()
+                ))
                 .toList();
     }
 

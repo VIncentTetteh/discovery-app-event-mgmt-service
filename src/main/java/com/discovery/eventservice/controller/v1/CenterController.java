@@ -65,5 +65,15 @@ public class CenterController {
     public List<CenterResponse> getMyCenters(@AuthenticationPrincipal String ownerId) {
         return centerService.getAllCentersByOwnerID(UUID.fromString(ownerId));
     }
+
+    @GetMapping("/nearby")
+    public List<CenterResponse> getNearbyCenters(
+            @RequestParam double latitude,
+            @RequestParam double longitude,
+            @RequestParam(defaultValue = "5000") double radius // meters
+    ) {
+        return centerService.findCentersNearby(latitude, longitude, radius);
+    }
+
 }
 

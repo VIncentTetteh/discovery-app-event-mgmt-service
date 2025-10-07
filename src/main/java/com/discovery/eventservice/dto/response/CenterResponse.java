@@ -8,6 +8,8 @@ public record CenterResponse(
         String description,
         String location,
         String category,
-        UUID ownerId
+        UUID ownerId,
+        Double latitude,
+        Double longitude
 ) {}
 

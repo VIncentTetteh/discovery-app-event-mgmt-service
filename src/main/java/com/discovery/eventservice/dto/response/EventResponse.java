@@ -10,6 +10,9 @@ public record EventResponse(
         LocalDateTime startTime,
         LocalDateTime endTime,
         boolean isPrivate,
-        UUID centerId
+        UUID centerId,
+        String centerName,
+        Double centerLatitude,
+        Double centerLongitude
 ) {}
 

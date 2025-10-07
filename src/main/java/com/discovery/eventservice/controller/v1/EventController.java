@@ -65,6 +65,15 @@ public class EventController {
         eventService.deleteEvent(id, centerId);
     }
 
+    @GetMapping("/nearby")
+    public List<EventResponse> getEventsNearbyCenters(
+            @RequestParam double latitude,
+            @RequestParam double longitude,
+            @RequestParam(defaultValue = "5000") double radius // meters
+    ) {
+        return eventService.findEventsNearbyCenters(latitude, longitude, radius);
+    }
+
 //    /**
 //     * Get all events owned by the authenticated admin
 //     */

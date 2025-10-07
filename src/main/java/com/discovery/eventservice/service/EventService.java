@@ -13,6 +13,7 @@ public interface EventService {
     List<EventResponse> getEventsByCenter(UUID centerId);
     List<EventResponse> getAllPublicEvents();
     void deleteEvent(UUID id, UUID centerId) throws AccessDeniedException;
+    List<EventResponse> findEventsNearbyCenters(double latitude, double longitude, double radiusMeters);
 //    List<EventResponse> getAllEventsByOwnerID(UUID ownerId);
 }
 
