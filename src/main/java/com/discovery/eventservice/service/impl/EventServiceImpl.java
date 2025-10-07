@@ -29,16 +29,25 @@ public class EventServiceImpl implements EventService {
     private final CenterRepository centerRepository;
     private final EventMapper eventMapper;
     private final GeometryFactory geometryFactory = new GeometryFactory();
+    private final SubscriptionServiceImpl subscriptionService;
 
     @Override
-    public EventResponse createEvent(EventRequest request) {
+    public EventResponse createEvent(EventRequest request) throws AccessDeniedException {
         // Ensure center exists
         Center center = centerRepository.findById(request.centerId())
                 .orElseThrow(() -> new EntityNotFoundException("Center not found with id: " + request.centerId()));
 
+
         Event event = eventMapper.toEntity(request);
         event.setCenter(center);
 
+
+
+        if (event.isPrivate() || event.getTicketTypes() != null && !event.getTicketTypes().isEmpty()) {
+            if (!subscriptionService.hasActiveSubscription(center.getOwnerId())) {
+                throw new AccessDeniedException("You need an active subscription to create private events.");
+            }
+        }
         Event saved = eventRepository.save(event);
         return eventMapper.toResponse(saved);
     }

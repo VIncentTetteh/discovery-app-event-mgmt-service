@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface EventService {
-    EventResponse createEvent(EventRequest request);
+    EventResponse createEvent(EventRequest request) throws AccessDeniedException;
     EventResponse getEvent(UUID id);
     List<EventResponse> getEventsByCenter(UUID centerId);
     List<EventResponse> getAllPublicEvents();

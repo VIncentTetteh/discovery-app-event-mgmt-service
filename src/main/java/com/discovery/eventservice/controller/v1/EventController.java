@@ -52,7 +52,7 @@ public class EventController {
      */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public EventResponse createEvent(@RequestBody EventRequest request) {
+    public EventResponse createEvent(@RequestBody EventRequest request) throws AccessDeniedException {
         return eventService.createEvent(request);
     }
 

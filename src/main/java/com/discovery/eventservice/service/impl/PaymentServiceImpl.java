@@ -52,7 +52,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .orElseThrow(() -> new EntityNotFoundException(
                             "Ticket type not found: " + t.ticketTypeId()));
 
-            BigDecimal ticketTotal = ticketType.getPrice().multiply(BigDecimal.valueOf(t.quantity()));
+            BigDecimal ticketTotal = ticketType.getFinalPrice().multiply(BigDecimal.valueOf(t.quantity()));
             totalAmount = totalAmount.add(ticketTotal);
             ticketNames.add(ticketType.getName());
 
@@ -139,4 +139,6 @@ public class PaymentServiceImpl implements PaymentService {
                 .map(paymentMapper::toResponse)
                 .toList();
     }
+
+
 }
