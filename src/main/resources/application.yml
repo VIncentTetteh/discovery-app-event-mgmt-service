@@ -57,3 +57,7 @@ app:
 
 server:
   port: ${PORT:8082}
+
+platform:
+  ticket:
+    fee-percent: 10.0

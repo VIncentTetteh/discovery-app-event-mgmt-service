@@ -6,8 +6,9 @@ import java.util.UUID;
 public record TicketTypeResponse(
         UUID id,
         String name,
-        BigDecimal price,
-        int quantity,
-        UUID eventId
+        BigDecimal basePrice,
+        BigDecimal finalPrice,
+        BigDecimal platformFeePercent,
+        int quantity
 ) {}
 

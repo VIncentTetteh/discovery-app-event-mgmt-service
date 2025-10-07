@@ -32,7 +32,14 @@ public class TicketType extends BaseEntity {
     private UUID id;
 
     private String name;       // e.g. VIP, Regular
-    private BigDecimal price;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal basePrice; // Manager-defined
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal finalPrice; // basePrice + system fee
+
+    @Column(nullable = false, precision = 5, scale = 2)
+    private BigDecimal platformFeePercent; // e.g. 10.00
     private int quantity;
 
     @ManyToOne(fetch = FetchType.LAZY)

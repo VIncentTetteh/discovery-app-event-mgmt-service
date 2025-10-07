@@ -11,8 +11,11 @@ import com.discovery.eventservice.service.TicketTypeService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,18 +28,33 @@ public class TicketTypeServiceImpl implements TicketTypeService {
     private final EventRepository eventRepository;
     private final TicketTypeMapper ticketTypeMapper;
 
+    // Configurable system fee (you can move it to application.yml)
+    @Value("${platform.ticket.fee-percent:10.0}")
+    private BigDecimal platformFeePercent; // 10%
+
     @Override
     public TicketTypeResponse createTicketType(TicketTypeRequest request) {
         // Ensure the event exists
         Event event = eventRepository.findById(request.eventId())
                 .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + request.eventId()));
 
+        // Map basic fields from request → entity
         TicketType ticketType = ticketTypeMapper.toEntity(request);
         ticketType.setEvent(event);
+
+        // 🧮 Calculate final price with platform commission
+        BigDecimal basePrice = request.basePrice();
+        BigDecimal feeMultiplier = platformFeePercent.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal finalPrice = basePrice.add(basePrice.multiply(feeMultiplier));
+
+        ticketType.setBasePrice(basePrice);
+        ticketType.setFinalPrice(finalPrice);
+        ticketType.setPlatformFeePercent(platformFeePercent);
 
         TicketType saved = ticketTypeRepository.save(ticketType);
         return ticketTypeMapper.toResponse(saved);
     }
+
 
     @Override
     @Transactional

@@ -4,9 +4,9 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record TicketTypeRequest(
+        UUID eventId,
         String name,
-        BigDecimal price,
-        int quantity,
-        UUID eventId
+        BigDecimal basePrice,
+        int quantity
 ) {}
 
