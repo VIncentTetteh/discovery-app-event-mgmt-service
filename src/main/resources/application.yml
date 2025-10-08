@@ -3,9 +3,12 @@ spring:
     name: eventservice
 
 
+
+
+
   # Postgres (JPA with HikariCP)
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/eventservicesdb}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/eventservicedb}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -21,6 +24,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
+        default_schema: public
         format_sql: true
         jdbc:
           time_zone: UTC
@@ -28,11 +32,13 @@ spring:
   # Flyway (for schema migrations)
   flyway:
     enabled: true
-    url: jdbc:postgresql://localhost:5432/eventservicesdb
+    url: jdbc:postgresql://localhost:5432/eventservicedb
     user: postgres
     password: postgres
     baseline-on-migrate: true
     locations: classpath:db/migration
+    default-schema: public
+    schemas: public
 
   # Redis
   redis:
@@ -61,3 +67,8 @@ server:
 platform:
   ticket:
     fee-percent: 10.0
+
+paystack:
+  secret-key: sk_test_your_secret_key_here
+  public-key: pk_test_your_public_key_here
+  base-url: https://api.paystack.co

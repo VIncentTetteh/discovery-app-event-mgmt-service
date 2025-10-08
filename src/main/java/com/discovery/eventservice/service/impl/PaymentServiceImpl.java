@@ -12,7 +12,6 @@ import com.discovery.eventservice.model.Payment;
 import com.discovery.eventservice.model.TicketType;
 import com.discovery.eventservice.repository.PaymentRepository;
 import com.discovery.eventservice.service.PaymentService;
-import com.discovery.eventservice.service.PaystackService;
 import com.discovery.eventservice.service.TicketService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -37,7 +36,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final TicketTypeRepository ticketTypeRepository;
     private final PaymentMapper paymentMapper;
-    private final PaystackService paystackService;
+    private final PaystackServiceImpl paystackService;
     private final TicketService ticketService;
 
     @Override

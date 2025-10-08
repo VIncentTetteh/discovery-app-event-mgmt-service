@@ -57,10 +57,10 @@ public class Center {
     @Column(columnDefinition = "geography(Point,4326)", nullable = false)
     private Point coordinates;
 
-    @Column(precision = 9, scale = 6)
+    @Column
     private Double latitude;
 
-    @Column(precision = 9, scale = 6)
+    @Column
     private Double longitude;
 
     @OneToMany(mappedBy = "center", cascade = CascadeType.ALL, orphanRemoval = true)

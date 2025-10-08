@@ -112,7 +112,7 @@ public class TicketServiceImpl implements TicketService {
     public BigDecimal getTicketTypePrice(UUID ticketTypeId) {
         TicketType ticketType = ticketTypeRepository.findById(ticketTypeId)
                 .orElseThrow(() -> new EntityNotFoundException("Ticket type not found with id: " + ticketTypeId));
-        return ticketType.getPrice();
+        return ticketType.getFinalPrice();
     }
 
     /**
