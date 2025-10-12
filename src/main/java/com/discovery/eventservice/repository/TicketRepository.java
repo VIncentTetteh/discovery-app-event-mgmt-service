@@ -13,5 +13,10 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
     List<Ticket> findByUserId(UUID userId);
 
     Optional<Ticket> findByQrCodeKey(String key);
+
+    boolean existsByUserIdAndPaymentIdAndTicketTypeId(UUID userId, UUID paymentId, UUID ticketTypeId);
+
+    Optional<Ticket> findByQrValue(String qrValue);
+
 }
 

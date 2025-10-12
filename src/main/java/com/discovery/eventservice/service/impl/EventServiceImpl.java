@@ -43,7 +43,7 @@ public class EventServiceImpl implements EventService {
 
 
 
-        if (event.isPrivate() || event.getTicketTypes() != null && !event.getTicketTypes().isEmpty()) {
+        if (event.isPrivate() || event.getTicketTypes() != null && (!event.getTicketTypes().isEmpty())) {
             if (!subscriptionService.hasActiveSubscription(center.getOwnerId())) {
                 throw new AccessDeniedException("You need an active subscription to create private events.");
             }

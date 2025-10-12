@@ -1,5 +1,6 @@
 package com.discovery.eventservice.service.impl;
 
+import com.discovery.eventservice.service.S3Service;
 import com.discovery.eventservice.util.QrCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +20,7 @@ import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
-public class S3Service {
+public class S3ServiceImpl implements S3Service {
 
     private final S3Client s3Client;
     private final S3Presigner presigner;
@@ -31,6 +32,7 @@ public class S3Service {
      * Uploads QR code image to private S3 bucket.
      * Stores object key (not public URL).
      */
+    @Override
     public String uploadQrCode(String qrValue) {
         try {
             // Generate QR code image
@@ -63,6 +65,7 @@ public class S3Service {
     /**
      * Generates a temporary presigned URL for accessing the QR code.
      */
+    @Override
     public String generatePresignedUrl(String objectKey, Duration expiry) {
         GetObjectRequest getRequest = GetObjectRequest.builder()
                 .bucket(bucketName)

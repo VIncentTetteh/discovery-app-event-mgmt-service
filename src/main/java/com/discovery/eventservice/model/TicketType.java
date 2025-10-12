@@ -42,6 +42,9 @@ public class TicketType extends BaseEntity {
     private BigDecimal platformFeePercent; // e.g. 10.00
     private int quantity;
 
+    @Column(nullable = false)
+    private int availableQuantity;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;

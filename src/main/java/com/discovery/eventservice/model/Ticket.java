@@ -19,7 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE centers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE tickets SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Where(clause = "deleted_at IS NULL")
 public class Ticket extends BaseEntity {
 
@@ -31,6 +31,9 @@ public class Ticket extends BaseEntity {
 
     @Column(nullable = false, unique = true)
     private String qrCodeKey; // S3 object key instead of public URL
+
+    @Column(nullable = false, unique = true)
+    private String qrValue; // actual QR code value (encoded data)
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

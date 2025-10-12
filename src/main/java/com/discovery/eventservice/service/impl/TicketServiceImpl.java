@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -31,7 +32,7 @@ public class TicketServiceImpl implements TicketService {
     private final TicketMapper ticketMapper;
     private final TicketTypeRepository ticketTypeRepository;
     private final PaymentRepository paymentRepository;
-    private final S3Service s3Service;
+    private final S3ServiceImpl s3Service;
 
     @Override
     public TicketResponse getTicket(UUID id) {
@@ -98,10 +99,8 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public List<TicketResponse> issueTickets(UUID userId, UUID paymentId, List<TicketPurchaseRequest> tickets) {
         return tickets.stream()
-                .flatMap(t -> {
-                    return java.util.stream.IntStream.range(0, t.quantity())
-                            .mapToObj(i -> issueTicket(t.ticketTypeId(), userId, paymentId));
-                })
+                .flatMap(t -> java.util.stream.IntStream.range(0, t.quantity())
+                        .mapToObj(i -> issueTicket(t.ticketTypeId(), userId, paymentId)))
                 .toList();
     }
 

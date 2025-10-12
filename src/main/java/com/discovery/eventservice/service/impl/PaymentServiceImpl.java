@@ -41,50 +41,61 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public PaymentResponse initiatePayment(PaymentRequest request) {
-        // Validate tickets and calculate total (optional but recommended)
-        List<PaymentTicket> paymentTickets = new ArrayList<>();
-        List<String> ticketNames = new ArrayList<>();
+        if (request == null || request.tickets() == null || request.tickets().isEmpty()) {
+            throw new IllegalArgumentException("At least one ticket must be provided.");
+        }
+
+        if (request.userId() == null || request.eventId() == null ||
+                request.amount() == null || request.email() == null) {
+            throw new IllegalArgumentException("Missing required payment request fields.");
+        }
+
+        // ✅ Step 1: Validate and calculate total amount
         BigDecimal totalAmount = BigDecimal.ZERO;
+        List<String> ticketNames = new ArrayList<>();
+
+        List<PaymentTicket> paymentTickets = new ArrayList<>();
 
         for (TicketPurchaseRequest t : request.tickets()) {
             TicketType ticketType = ticketTypeRepository.findById(t.ticketTypeId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Ticket type not found: " + t.ticketTypeId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Ticket type not found: " + t.ticketTypeId()));
+
+            if (ticketType.getAvailableQuantity() < t.quantity()) {
+                throw new IllegalArgumentException("Not enough tickets available for type: " + ticketType.getName());
+            }
 
             BigDecimal ticketTotal = ticketType.getFinalPrice().multiply(BigDecimal.valueOf(t.quantity()));
             totalAmount = totalAmount.add(ticketTotal);
             ticketNames.add(ticketType.getName());
-
-            PaymentTicket pt = PaymentTicket.builder()
-                    .ticketType(ticketType)
-                    .quantity(t.quantity())
-                    .build();
-            paymentTickets.add(pt);
         }
 
-        // Safety check
         if (totalAmount.compareTo(request.amount()) != 0) {
-            log.warn("⚠️ Provided amount ({}) doesn’t match computed ticket total ({}).", request.amount(), totalAmount);
+            log.warn("⚠️ Provided amount ({}) doesn’t match computed total ({}).", request.amount(), totalAmount);
+            throw new IllegalArgumentException("Provided amount does not match computed ticket total.");
         }
 
-        // For now, use the first ticket to populate metadata (could extend to all later)
+        // ✅ Step 2: Initialize Paystack transaction
         TicketPurchaseRequest firstTicket = request.tickets().get(0);
-
-        // Initialize Paystack transaction (with metadata)
         PaystackInitRequest paystackInit = new PaystackInitRequest(
                 request.userId(),
                 request.eventId(),
                 firstTicket.ticketTypeId(),
-                ticketNames, // can use specific name if single ticket
+                ticketNames,
                 firstTicket.quantity(),
                 request.amount(),
                 request.email(),
                 request.callbackUrl()
         );
 
-        PaystackInitResponse initResponse = paystackService.initializeTransaction(paystackInit);
+        PaystackInitResponse initResponse;
+        try {
+            initResponse = paystackService.initializeTransaction(paystackInit);
+        } catch (Exception e) {
+            log.error("Failed to initialize Paystack transaction", e);
+            throw new RuntimeException("Payment initialization failed. Please try again.");
+        }
 
-        // Build Payment entity
+        // ✅ Step 3: Create Payment (PENDING)
         Payment payment = Payment.builder()
                 .userId(request.userId())
                 .eventId(request.eventId())
@@ -92,13 +103,29 @@ public class PaymentServiceImpl implements PaymentService {
                 .status(PaymentStatus.PENDING)
                 .reference(initResponse.reference())
                 .authorizationUrl(initResponse.authorizationUrl())
-                .tickets(paymentTickets)
                 .build();
 
-        // Link PaymentTickets to Payment
-        paymentTickets.forEach(pt -> pt.setPayment(payment));
+        // ✅ Step 4: Save PaymentTickets associated with this payment
+        for (TicketPurchaseRequest t : request.tickets()) {
+            TicketType ticketType = ticketTypeRepository.findById(t.ticketTypeId())
+                    .orElseThrow(() -> new EntityNotFoundException("Ticket type not found: " + t.ticketTypeId()));
+
+            PaymentTicket pt = PaymentTicket.builder()
+                    .ticketType(ticketType)
+                    .quantity(t.quantity())
+                    .payment(payment)
+                    .build();
+
+            paymentTickets.add(pt);
+        }
+
+        payment.setTickets(paymentTickets);
 
         Payment saved = paymentRepository.save(payment);
+
+        log.info("💳 Payment initiated: user={} event={} amount={} ref={}",
+                request.userId(), request.eventId(), request.amount(), saved.getReference());
+
         return paymentMapper.toResponse(saved);
     }
 
@@ -109,35 +136,41 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findByReference(reference)
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found with reference: " + reference));
 
-        if ("success".equalsIgnoreCase(verifyResponse.status())) {
-            payment.setStatus(PaymentStatus.SUCCESS);
-            paymentRepository.save(payment);
+        log.info("[PaymentConfirm] reference={} status={}", reference, verifyResponse.status());
 
-            // Issue tickets for all purchased ticket types and quantities
-            for (PaymentTicket pt : payment.getTickets()) {
-                for (int i = 0; i < pt.getQuantity(); i++) {
-                    ticketService.issueTicket(pt.getTicketType().getId(), payment.getUserId(), payment.getId());
-                }
-            }
-
-            log.info("Payment {} verified successfully — tickets issued.", reference);
-        } else {
+        if (!"success".equalsIgnoreCase(verifyResponse.status())) {
             payment.setStatus(PaymentStatus.FAILED);
             paymentRepository.save(payment);
             log.warn("Payment {} verification failed with status: {}", reference, verifyResponse.status());
+            return paymentMapper.toResponse(payment);
         }
 
+        // Optional: Verify amount matches expected
+        if (verifyResponse.amount() != null &&
+                verifyResponse.amount().compareTo(payment.getAmount()) != 0) {
+            log.error("💣 Amount mismatch for ref={}, expected={}, got={}",
+                    reference, payment.getAmount(), verifyResponse.amount());
+            throw new SecurityException("Payment amount mismatch detected.");
+        }
+
+        payment.setStatus(PaymentStatus.SUCCESS);
+        paymentRepository.save(payment);
+
+        // Issue tickets for purchased ticket types
+        for (PaymentTicket pt : payment.getTickets()) {
+            ticketService.issueTickets(payment.getUserId(), payment.getId(),
+                    List.of(new TicketPurchaseRequest(pt.getTicketType().getId(), pt.getQuantity())));
+        }
+
+        log.info("Payment {} verified successfully. Tickets issued.", reference);
         return paymentMapper.toResponse(payment);
     }
 
     @Override
-    @Transactional
     public List<PaymentResponse> getUserPayments(UUID userId) {
         return paymentRepository.findByUserId(userId)
                 .stream()
                 .map(paymentMapper::toResponse)
                 .toList();
     }
-
-
 }

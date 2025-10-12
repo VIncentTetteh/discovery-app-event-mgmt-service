@@ -29,7 +29,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanRepository planRepository;
-    private final PaystackSubscriptionService paystackService;
+    private final PaystackSubscriptionServiceImpl paystackService;
 
     @Override
     public SubscriptionResponse subscribe(UUID userId, String email, PlanType planType, String name) {

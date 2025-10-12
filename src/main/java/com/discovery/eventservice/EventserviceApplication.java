@@ -15,9 +15,4 @@ public class EventserviceApplication {
 		SpringApplication.run(EventserviceApplication.class, args);
 	}
 
-	@Bean
-	public RestTemplate restTemplate() {
-		return new RestTemplate();
-	}
-
 }

@@ -4,6 +4,7 @@ import com.discovery.eventservice.config.PaystackConfig;
 import com.discovery.eventservice.dto.response.PaystackCustomerResponse;
 import com.discovery.eventservice.dto.response.PaystackSubscriptionInitResponse;
 import com.discovery.eventservice.dto.response.PaystackSubscriptionVerifyResponse;
+import com.discovery.eventservice.service.PaystackSubscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -17,7 +18,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PaystackSubscriptionService {
+public class PaystackSubscriptionServiceImpl implements PaystackSubscriptionService {
 
     private final RestTemplate restTemplate;
     private final PaystackConfig paystackConfig;
@@ -30,7 +31,9 @@ public class PaystackSubscriptionService {
         return headers;
     }
 
+    @Override
     public PaystackCustomerResponse createCustomer(String email, String fullName) {
+        log.info("➡️ Creating Paystack customer [email={}]", email);
         try {
             Map<String, Object> body = new HashMap<>();
             body.put("email", email);
@@ -38,6 +41,8 @@ public class PaystackSubscriptionService {
             if (fullName.contains(" ")) {
                 body.put("last_name", fullName.substring(fullName.indexOf(' ') + 1));
             }
+
+            log.debug("📦 Customer request payload: {}", body);
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, buildHeaders());
             ResponseEntity<PaystackCustomerResponse> response = restTemplate.exchange(
@@ -47,19 +52,23 @@ public class PaystackSubscriptionService {
                     PaystackCustomerResponse.class
             );
 
+            log.info("Customer created successfully [email={}, customerCode={}]",
+                    email,
+                    response.getBody().getData().getCustomerCode());
+
             return response.getBody();
         } catch (Exception ex) {
-            log.error("Error creating Paystack customer: {}", ex.getMessage(), ex);
+            log.error("Error creating Paystack customer [email={}]: {}", email, ex.getMessage(), ex);
             throw new RuntimeException("Failed to create Paystack customer");
         }
     }
 
+    @Override
     public PaystackSubscriptionInitResponse createSubscription(String customerCode, String planCode) {
+        log.info("➡️ Creating subscription [customerCode={}, planCode={}]", customerCode, planCode);
         try {
-            Map<String, Object> body = Map.of(
-                    "customer", customerCode,
-                    "plan", planCode
-            );
+            Map<String, Object> body = Map.of("customer", customerCode, "plan", planCode);
+            log.debug("📦 Subscription request payload: {}", body);
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, buildHeaders());
             ResponseEntity<PaystackSubscriptionInitResponse> response = restTemplate.exchange(
@@ -69,14 +78,21 @@ public class PaystackSubscriptionService {
                     PaystackSubscriptionInitResponse.class
             );
 
+            log.info("✅ Subscription created [subscriptionCode={}, customerCode={}]",
+                    response.getBody().getData().getSubscriptionCode(),
+                    customerCode);
+
             return response.getBody();
         } catch (Exception ex) {
-            log.error("Error creating Paystack subscription: {}", ex.getMessage(), ex);
+            log.error("Error creating Paystack subscription [customerCode={}]: {}",
+                    customerCode, ex.getMessage(), ex);
             throw new RuntimeException("Failed to create Paystack subscription");
         }
     }
 
+    @Override
     public PaystackSubscriptionVerifyResponse verifySubscription(String subscriptionCode) {
+        log.info("➡️ Verifying subscription [subscriptionCode={}]", subscriptionCode);
         try {
             HttpEntity<Void> request = new HttpEntity<>(buildHeaders());
             ResponseEntity<PaystackSubscriptionVerifyResponse> response = restTemplate.exchange(
@@ -86,11 +102,15 @@ public class PaystackSubscriptionService {
                     PaystackSubscriptionVerifyResponse.class
             );
 
+            log.info("✅ Subscription verification successful [subscriptionCode={}, status={}]",
+                    subscriptionCode,
+                    response.getBody().getData().getStatus());
+
             return response.getBody();
         } catch (Exception ex) {
-            log.error("Error verifying Paystack subscription: {}", ex.getMessage(), ex);
+            log.error("Error verifying Paystack subscription [subscriptionCode={}]: {}",
+                    subscriptionCode, ex.getMessage(), ex);
             throw new RuntimeException("Failed to verify Paystack subscription");
         }
     }
 }
-

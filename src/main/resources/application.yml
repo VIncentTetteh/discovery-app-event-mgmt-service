@@ -46,12 +46,21 @@ spring:
     port: ${REDIS_PORT:6379}
 
 
+#logging:
+#  level:
+#    root: INFO
+#    org.springframework.web: INFO
+#    org.hibernate.SQL: WARN
+#    com.discovery.userservice: DEBUG
+
 logging:
   level:
     root: INFO
     org.springframework.web: INFO
-    org.hibernate.SQL: WARN
-    com.discovery.userservice: DEBUG
+    com.discovery.eventservice: DEBUG  # Enable DEBUG for your Paystack package
+  pattern:
+    console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss}", "level":"%p", "logger":"%c", "message":"%m"}%n'
+
 
 
 jwt:

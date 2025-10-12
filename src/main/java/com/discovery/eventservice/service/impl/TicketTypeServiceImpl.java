@@ -42,7 +42,7 @@ public class TicketTypeServiceImpl implements TicketTypeService {
         TicketType ticketType = ticketTypeMapper.toEntity(request);
         ticketType.setEvent(event);
 
-        // 🧮 Calculate final price with platform commission
+        // Calculate final price with platform commission
         BigDecimal basePrice = request.basePrice();
         BigDecimal feeMultiplier = platformFeePercent.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         BigDecimal finalPrice = basePrice.add(basePrice.multiply(feeMultiplier));
@@ -50,6 +50,9 @@ public class TicketTypeServiceImpl implements TicketTypeService {
         ticketType.setBasePrice(basePrice);
         ticketType.setFinalPrice(finalPrice);
         ticketType.setPlatformFeePercent(platformFeePercent);
+
+        // Initialize availableQuantity to total quantity
+        ticketType.setAvailableQuantity(ticketType.getQuantity());
 
         TicketType saved = ticketTypeRepository.save(ticketType);
         return ticketTypeMapper.toResponse(saved);

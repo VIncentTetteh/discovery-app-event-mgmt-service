@@ -18,7 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE centers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE payment_tickets SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Where(clause = "deleted_at IS NULL")
 public class PaymentTicket extends BaseEntity {
 
@@ -36,6 +36,6 @@ public class PaymentTicket extends BaseEntity {
     @JoinColumn(name = "ticket_type_id", nullable = false)
     private TicketType ticketType;
 
+    @Column(nullable = false)
     private int quantity;
 }
-
