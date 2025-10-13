@@ -74,14 +74,7 @@ public class EventController {
         return eventService.findEventsNearbyCenters(latitude, longitude, radius);
     }
 
-//    /**
-//     * Get all events owned by the authenticated admin
-//     */
-//    @GetMapping("/owner")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public List<EventResponse> getMyEvents(@AuthenticationPrincipal String ownerId) {
-//        return eventService.getAllEventsByOwnerID(UUID.fromString(ownerId));
-//    }
+
 }
 
 

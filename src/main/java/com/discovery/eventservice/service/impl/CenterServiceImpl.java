@@ -1,11 +1,15 @@
 package com.discovery.eventservice.service.impl;
 
 
+import com.beust.jcommander.internal.Nullable;
 import com.discovery.eventservice.dto.request.CenterRequest;
+import com.discovery.eventservice.dto.response.CenterDistanceProjection;
 import com.discovery.eventservice.dto.response.CenterResponse;
 import com.discovery.eventservice.exception.CenterAlreadyExistsException;
 import com.discovery.eventservice.mapper.CenterMapper;
 import com.discovery.eventservice.model.Center;
+import com.discovery.eventservice.model.CenterCategory;
+import com.discovery.eventservice.repository.CenterCategoryRepository;
 import com.discovery.eventservice.repository.CenterRepository;
 import com.discovery.eventservice.service.CenterService;
 import jakarta.persistence.EntityNotFoundException;
@@ -14,13 +18,10 @@ import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.AccessDeniedException;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -30,20 +31,51 @@ public class CenterServiceImpl implements CenterService {
     private final CenterRepository centerRepository;
     private final CenterMapper centerMapper;
     private final GeometryFactory geometryFactory = new GeometryFactory();
+    private final CenterCategoryRepository centerCategoryRepository;
 
     @Override
     public CenterResponse createCenter(CenterRequest request, UUID ownerId) {
-        // check if center with same name and location already exists
-        if (centerRepository.findAll().stream()
-                .anyMatch(c -> c.getName().equalsIgnoreCase(request.name()) &&
-                        c.getLocation().equalsIgnoreCase(request.location()))) {
-            throw new CenterAlreadyExistsException("Center with same name and location already exists.");
+        // ✅ Check for duplicates
+        boolean exists = centerRepository.findAll().stream()
+                .anyMatch(c -> c.getName().equalsIgnoreCase(request.name())
+                        && c.getLocation().equalsIgnoreCase(request.location()));
+
+        if (exists) {
+            throw new CenterAlreadyExistsException("Center with the same name and location already exists.");
         }
-        Center center = centerMapper.toEntity(request);
-        center.setOwnerId(ownerId);
+
+        // ✅ Fetch categories by ID
+        Set<CenterCategory> categories = new HashSet<>(
+                centerCategoryRepository.findAllById(request.categoryIds())
+        );
+
+        if (categories.isEmpty()) {
+            throw new IllegalArgumentException("At least one valid category is required.");
+        }
+
+        // ✅ Build geometry point
+        Point coordinates = geometryFactory.createPoint(new Coordinate(
+                request.longitude(),
+                request.latitude()
+        ));
+
+        // ✅ Map to entity
+        Center center = Center.builder()
+                .name(request.name())
+                .description(request.description())
+                .location(request.location())
+                .categories(categories)
+                .coordinates(coordinates)
+                .latitude(request.latitude())
+                .longitude(request.longitude())
+                .ownerId(ownerId)
+                .build();
+
+        // ✅ Save and return
         Center saved = centerRepository.save(center);
         return centerMapper.toResponse(saved);
     }
+
 
     @Override
     @Transactional
@@ -62,14 +94,6 @@ public class CenterServiceImpl implements CenterService {
                 .toList();
     }
 
-    @Override
-    @Transactional
-    public List<CenterResponse> getCentersByCategory(String category) {
-        return centerRepository.findByCategory(category)
-                .stream()
-                .map(centerMapper::toResponse)
-                .toList();
-    }
 
     @Override
     @Transactional
@@ -100,26 +124,40 @@ public class CenterServiceImpl implements CenterService {
                 .toList();
     }
 
+
     @Override
-    public List<CenterResponse> findCentersNearby(double latitude, double longitude, double radiusMeters) {
+    public List<CenterResponse> findCentersNearby(
+            double latitude,
+            double longitude,
+            double radiusMeters,
+            @Nullable List<String> categories) {
+
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
         point.setSRID(4326);
 
-        List<Center> centers = centerRepository.findNearbyCenters(point, radiusMeters);
+        String[] categoryArray = (categories == null || categories.isEmpty())
+                ? null
+                : categories.stream().map(String::toLowerCase).toArray(String[]::new);
 
-        return centers.stream()
-                .map(center -> new CenterResponse(
-                        center.getId(),
-                        center.getName(),
-                        center.getDescription(),
-                        center.getLocation(),
-                        center.getCategory(),
-                        center.getOwnerId(),
-                        center.getLatitude(),
-                        center.getLongitude()
-                ))
+        List<CenterDistanceProjection> results =
+                centerRepository.findNearbyCentersByCategories(point, radiusMeters, categoryArray);
+
+        return results.stream()
+                .map(p -> CenterResponse.builder()
+                        .id(p.getId())
+                        .name(p.getName())
+                        .description(p.getDescription())
+                        .location(p.getLocation())
+                        .ownerId(p.getOwnerId())
+                        .latitude(p.getLatitude())
+                        .longitude(p.getLongitude())
+                        .distanceMeters(p.getDistance())
+                        .build())
                 .toList();
     }
+
+
+
 
 
 }

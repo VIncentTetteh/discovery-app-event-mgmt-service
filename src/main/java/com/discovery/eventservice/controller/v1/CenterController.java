@@ -5,6 +5,7 @@ import com.discovery.eventservice.dto.response.CenterResponse;
 import com.discovery.eventservice.model.CustomUserPrincipal;
 import com.discovery.eventservice.service.CenterService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +38,7 @@ public class CenterController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String location
     ) {
-        if (category != null) return centerService.getCentersByCategory(category);
+//        if (category != null) return centerService.getCentersByCategory(category);
         if (location != null) return centerService.getCentersByLocation(location);
         return centerService.getAllCenters();
     }
@@ -67,13 +68,17 @@ public class CenterController {
     }
 
     @GetMapping("/nearby")
-    public List<CenterResponse> getNearbyCenters(
+    public ResponseEntity<List<CenterResponse>> getNearbyCenters(
             @RequestParam double latitude,
             @RequestParam double longitude,
-            @RequestParam(defaultValue = "5000") double radius // meters
-    ) {
-        return centerService.findCentersNearby(latitude, longitude, radius);
+            @RequestParam double radiusMeters,
+            @RequestParam(required = false) List<String> categories) {
+
+        return ResponseEntity.ok(
+                centerService.findCentersNearby(latitude, longitude, radiusMeters, categories)
+        );
     }
+
 
 }
 

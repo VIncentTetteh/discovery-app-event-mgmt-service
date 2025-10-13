@@ -13,9 +13,7 @@ import org.hibernate.annotations.*;
 
 import org.locationtech.jts.geom.Point;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(
@@ -45,22 +43,27 @@ public class Center {
     private String description;
 
     @Column(length = 255)
-    private String location; // Human-readable (e.g., "Osu, Accra")
+    private String location; // e.g., "Osu, Accra"
 
-    @Column(length = 100)
-    private String category;
+    /**
+     * ✅ Many-to-Many: A center can belong to multiple categories,
+     * and a category can include multiple centers.
+     */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "center_category_mappings",
+            joinColumns = @JoinColumn(name = "center_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private Set<CenterCategory> categories = new HashSet<>();
 
     @Column(name = "owner_id", nullable = false)
-    private UUID ownerId; // reference to user-service (via gRPC)
-
+    private UUID ownerId; // from user-service (via gRPC, API, etc.)
 
     @Column(columnDefinition = "geography(Point,4326)", nullable = false)
     private Point coordinates;
 
-    @Column
     private Double latitude;
-
-    @Column
     private Double longitude;
 
     @OneToMany(mappedBy = "center", cascade = CascadeType.ALL, orphanRemoval = true)
