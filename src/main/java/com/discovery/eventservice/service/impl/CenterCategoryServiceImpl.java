@@ -1,5 +1,6 @@
 package com.discovery.eventservice.service.impl;
 
+import com.discovery.eventservice.dto.request.CenterCategoryRequest;
 import com.discovery.eventservice.model.CenterCategory;
 import com.discovery.eventservice.repository.CenterCategoryRepository;
 import com.discovery.eventservice.service.CenterCategoryService;
@@ -27,22 +28,26 @@ public class CenterCategoryServiceImpl implements CenterCategoryService {
     }
 
     @Override
-    public CenterCategory createCenterCategory(CenterCategory centerCategory) {
+    public CenterCategory createCenterCategory(CenterCategoryRequest centerCategoryRequest) {
         // Prevent duplicates by name
-        centerCategoryRepository.findByNameIgnoreCase(centerCategory.getName())
+        centerCategoryRepository.findByNameIgnoreCase(centerCategoryRequest.name())
                 .ifPresent(existing -> {
                     throw new RuntimeException("Center category already exists: " + existing.getName());
                 });
+        CenterCategory centerCategory = CenterCategory.builder()
+                .name(centerCategoryRequest.name())
+                .description(centerCategoryRequest.description())
+                .build();
 
         return centerCategoryRepository.save(centerCategory);
     }
 
     @Override
-    public CenterCategory updateCenterCategory(UUID id, CenterCategory updatedCategory) {
+    public CenterCategory updateCenterCategory(UUID id, CenterCategoryRequest updatedCategory) {
         CenterCategory existing = getCenterCategoryById(id);
 
-        existing.setName(updatedCategory.getName());
-        existing.setDescription(updatedCategory.getDescription());
+        existing.setName(updatedCategory.name());
+        existing.setDescription(updatedCategory.description());
 
         return centerCategoryRepository.save(existing);
     }

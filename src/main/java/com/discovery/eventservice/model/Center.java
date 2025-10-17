@@ -29,7 +29,7 @@ import java.util.*;
 @Builder
 @SQLDelete(sql = "UPDATE centers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Where(clause = "deleted_at IS NULL")
-public class Center {
+public class Center extends BaseEntity{
 
     @Id
     @GeneratedValue(generator = "uuid7")
@@ -69,16 +69,6 @@ public class Center {
     @OneToMany(mappedBy = "center", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Event> events = new ArrayList<>();
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false, nullable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
 
     // Keep coordinates synced with lat/lon
     public void setCoordinates(Point point) {

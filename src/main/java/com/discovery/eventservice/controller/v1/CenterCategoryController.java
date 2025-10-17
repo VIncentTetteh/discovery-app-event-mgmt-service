@@ -1,5 +1,6 @@
 package com.discovery.eventservice.controller.v1;
 
+import com.discovery.eventservice.dto.request.CenterCategoryRequest;
 import com.discovery.eventservice.model.CenterCategory;
 import com.discovery.eventservice.service.CenterCategoryService;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class CenterCategoryController {
 
     // ✅ Create a new category
     @PostMapping
-    public ResponseEntity<CenterCategory> createCategory(@RequestBody CenterCategory category) {
+    public ResponseEntity<CenterCategory> createCategory(@RequestBody CenterCategoryRequest category) {
         CenterCategory created = centerCategoryService.createCenterCategory(category);
         return ResponseEntity.ok(created);
     }
@@ -39,7 +40,7 @@ public class CenterCategoryController {
     @PutMapping("/{id}")
     public ResponseEntity<CenterCategory> updateCategory(
             @PathVariable UUID id,
-            @RequestBody CenterCategory updatedCategory) {
+            @RequestBody CenterCategoryRequest updatedCategory) {
 
         CenterCategory category = centerCategoryService.updateCenterCategory(id, updatedCategory);
         return ResponseEntity.ok(category);

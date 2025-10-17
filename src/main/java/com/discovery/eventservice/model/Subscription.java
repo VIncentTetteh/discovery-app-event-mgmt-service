@@ -17,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Subscription {
+public class Subscription extends BaseEntity{
     @Id
     @GeneratedValue(generator = "uuid7")
     @GenericGenerator(name = "uuid7", type = Uuid7Type.class)

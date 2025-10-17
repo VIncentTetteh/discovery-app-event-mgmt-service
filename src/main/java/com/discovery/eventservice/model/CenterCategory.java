@@ -22,7 +22,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CenterCategory {
+public class CenterCategory extends BaseEntity{
 
     @Id
     @GeneratedValue(generator = "uuid7")
