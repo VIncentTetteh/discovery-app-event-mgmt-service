@@ -19,11 +19,16 @@ spring:
 
 
   jpa:
+    database-platform: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect
     hibernate:
-      ddl-auto: validate   # always rely on Flyway, no auto schema changes
+#      ddl-auto: validate
+      ddl-auto: update
+
     show-sql: false
     properties:
       hibernate:
+        spatial:
+          dialect: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect
         default_schema: public
         format_sql: true
         jdbc:

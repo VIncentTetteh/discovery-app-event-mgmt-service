@@ -1,8 +1,8 @@
-CREATE TABLE center_category_mappings
+CREATE TABLE center_category_map
 (
     category_id UUID NOT NULL,
     center_id   UUID NOT NULL,
-    CONSTRAINT pk_center_category_mappings PRIMARY KEY (category_id, center_id)
+    CONSTRAINT pk_center_category_map PRIMARY KEY (category_id, center_id)
 );
 
 CREATE TABLE centers
@@ -18,7 +18,7 @@ CREATE TABLE centers
     description VARCHAR(255),
     location    VARCHAR(255),
     owner_id    UUID         NOT NULL,
-    coordinates GEOGRAPHY(Point, 4326)      NOT NULL,
+    coordinates GEOMETRY(Point, 4326)       NOT NULL,
     latitude    DOUBLE PRECISION,
     longitude   DOUBLE PRECISION,
     CONSTRAINT pk_centers PRIMARY KEY (id)
@@ -264,8 +264,10 @@ ALTER TABLE tickets
 ALTER TABLE ticket_types
     ADD CONSTRAINT FK_TICKET_TYPES_ON_EVENT FOREIGN KEY (event_id) REFERENCES events (id);
 
-ALTER TABLE center_category_mappings
+ALTER TABLE center_category_map
     ADD CONSTRAINT fk_cencatmap_on_center FOREIGN KEY (center_id) REFERENCES centers (id);
 
-ALTER TABLE center_category_mappings
+ALTER TABLE center_category_map
     ADD CONSTRAINT fk_cencatmap_on_center_category FOREIGN KEY (category_id) REFERENCES centers_categories (id);
+
+DROP TABLE spatial_ref_sys CASCADE;

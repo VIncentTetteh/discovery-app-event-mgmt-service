@@ -12,7 +12,7 @@ public record CenterResponse(
         String name,
         String description,
         String location,
-        List<CenterCategory> categories,
+        List<CenterCategoryResponse> categories,
         UUID ownerId,
         Double latitude,
         Double longitude,

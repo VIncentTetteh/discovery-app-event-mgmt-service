@@ -1,6 +1,7 @@
 package com.discovery.eventservice.model;
 
 import com.discovery.eventservice.util.Uuid7Type;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,5 +37,7 @@ public class CenterCategory extends BaseEntity{
     private String description;
 
     @ManyToMany(mappedBy = "categories", fetch = FetchType.LAZY)
+    @JsonIgnore // prevents infinite recursion when serializing
     private Set<Center> centers = new HashSet<>();
+
 }

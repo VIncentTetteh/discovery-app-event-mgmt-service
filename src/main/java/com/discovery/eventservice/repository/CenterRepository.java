@@ -14,10 +14,20 @@ import java.util.UUID;
 
 @Repository
 public interface CenterRepository extends JpaRepository<Center, UUID>, JpaSpecificationExecutor<Center> {
-//    List<Center> findByCategory(UUID categoryId);
+
     List<Center> findByLocationContainingIgnoreCase(String location);
+
     List<Center> findByOwnerId(UUID ownerId);
-    // Find centers by category within a certain radius (in meters) from a given point
+
+    // ✅ Fetch all centers with categories eagerly (avoids ConcurrentModificationException)
+    @Query("""
+    SELECT DISTINCT c FROM Center c
+    LEFT JOIN FETCH c.categories
+    """)
+    List<Center> findAllWithCategories();
+
+
+    // ✅ Native query to find centers by category and distance
     @Query(value = """
         SELECT 
             c.id AS id,
@@ -40,6 +50,6 @@ public interface CenterRepository extends JpaRepository<Center, UUID>, JpaSpecif
             @Param("point") Point point,
             @Param("radius") double radius,
             @Param("categories") String[] categories);
-
 }
+
 

@@ -37,6 +37,14 @@ public class EventServiceImpl implements EventService {
         Center center = centerRepository.findById(request.centerId())
                 .orElseThrow(() -> new EntityNotFoundException("Center not found with id: " + request.centerId()));
 
+        // ensure same event name does not exist for center
+        boolean exists = eventRepository.findByCenterId(center.getId()).stream()
+                .anyMatch(e -> e.getTitle().equalsIgnoreCase(request.title()));
+        if (exists) {
+            throw new IllegalArgumentException("Event with the same title already exists for this center.");
+        }
+
+
 
         Event event = eventMapper.toEntity(request);
         event.setCenter(center);
@@ -49,7 +57,10 @@ public class EventServiceImpl implements EventService {
             }
         }
         Event saved = eventRepository.save(event);
-        return eventMapper.toResponse(saved);
+        Event loaded = eventRepository.findById(saved.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Event not found after saving"));
+        return eventMapper.toResponse(loaded);
+
     }
 
     @Override

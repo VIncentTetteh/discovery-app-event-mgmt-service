@@ -51,7 +51,7 @@ public class Center extends BaseEntity{
      */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "center_category_mappings",
+            name = "center_category_map", // must match DB table name
             joinColumns = @JoinColumn(name = "center_id"),
             inverseJoinColumns = @JoinColumn(name = "category_id")
     )
@@ -60,7 +60,7 @@ public class Center extends BaseEntity{
     @Column(name = "owner_id", nullable = false)
     private UUID ownerId; // from user-service (via gRPC, API, etc.)
 
-    @Column(columnDefinition = "geography(Point,4326)", nullable = false)
+    @Column(columnDefinition = "geometry(Point,4326)", nullable = false)
     private Point coordinates;
 
     private Double latitude;

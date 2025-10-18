@@ -13,8 +13,10 @@ import com.discovery.eventservice.repository.CenterCategoryRepository;
 import com.discovery.eventservice.repository.CenterRepository;
 import com.discovery.eventservice.service.CenterService;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -30,12 +32,11 @@ public class CenterServiceImpl implements CenterService {
 
     private final CenterRepository centerRepository;
     private final CenterMapper centerMapper;
-    private final GeometryFactory geometryFactory = new GeometryFactory();
     private final CenterCategoryRepository centerCategoryRepository;
+    private final GeometryFactory geometryFactory;
 
     @Override
     public CenterResponse createCenter(CenterRequest request, UUID ownerId) {
-        // ✅ Check for duplicates
         boolean exists = centerRepository.findAll().stream()
                 .anyMatch(c -> c.getName().equalsIgnoreCase(request.name())
                         && c.getLocation().equalsIgnoreCase(request.location()));
@@ -44,7 +45,6 @@ public class CenterServiceImpl implements CenterService {
             throw new CenterAlreadyExistsException("Center with the same name and location already exists.");
         }
 
-        // ✅ Fetch categories by ID
         Set<CenterCategory> categories = new HashSet<>(
                 centerCategoryRepository.findAllById(request.categoryIds())
         );
@@ -53,13 +53,13 @@ public class CenterServiceImpl implements CenterService {
             throw new IllegalArgumentException("At least one valid category is required.");
         }
 
-        // ✅ Build geometry point
+        // ✅ Build geometry point with SRID
         Point coordinates = geometryFactory.createPoint(new Coordinate(
                 request.longitude(),
                 request.latitude()
         ));
+        coordinates.setSRID(4326);
 
-        // ✅ Map to entity
         Center center = Center.builder()
                 .name(request.name())
                 .description(request.description())
@@ -71,10 +71,10 @@ public class CenterServiceImpl implements CenterService {
                 .ownerId(ownerId)
                 .build();
 
-        // ✅ Save and return
         Center saved = centerRepository.save(center);
         return centerMapper.toResponse(saved);
     }
+
 
 
     @Override
@@ -85,14 +85,15 @@ public class CenterServiceImpl implements CenterService {
         return centerMapper.toResponse(center);
     }
 
+    @Transactional(readOnly = true)
     @Override
-    @Transactional
     public List<CenterResponse> getAllCenters() {
-        return centerRepository.findAll()
-                .stream()
+        List<Center> centers = centerRepository.findAllWithCategories();
+        return centers.stream()
                 .map(centerMapper::toResponse)
                 .toList();
     }
+
 
 
     @Override
